@@ -22,3 +22,7 @@ npx skills add irfanmuhammedharis/skills -g --skill kicad-mcp-expert
 | [`kicad-mcp-expert`](skills/kicad-mcp-expert/SKILL.md) | Drive KiCad 10 through the KiCad MCP servers (`mcp__kicad__*` and `mcp__kicad-mixelpixx__*`) the way a senior circuit and PCB designer would, from a rough... |
 | [`pi-zero-2w`](skills/pi-zero-2w/SKILL.md) | Build and run Rust, Python and C on a Raspberry Pi Zero 2 W (and Zero W v1). Use when targeting a Pi Zero, cross-compiling for ARM, choosing armhf vs arm64,... |
 | [`skill-orchestrator`](skills/skill-orchestrator/SKILL.md) | Runs first on any non-trivial task: turns the request into a metaprompt via prompt-architect, picks skills from a once-per-project cached registry, and... |
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).
