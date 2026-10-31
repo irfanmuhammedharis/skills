@@ -1,0 +1,12 @@
+schema_version: "1.1"
+name: industrial-24v-rs485-node
+expected_outcome: |
+  Industrial tier recognised and stated. Requirements table and power tree with budget.
+  Schematic with a protection chain at the 24 V input (fuse or eFuse, reverse polarity,
+  surge TVS sized to the spec), isolated RS-485 (isolated transceiver plus isolated
+  supply, termination/bias, bus TVS), IEC 61131-2 style inputs, a protected high-side
+  output with inductive load handling, MCU supervision, test points. ERC 0 errors.
+  Board setup: 4 layers, netclasses with widths derived from calculator tools,
+  creepage/clearance rule across the isolation barrier encoded as a DRC rule, and a
+  placement plan that addresses the isolation barrier, connector edge, protection-at-entry
+  and DFT/fiducials. No routing.

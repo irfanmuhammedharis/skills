@@ -1,0 +1,8 @@
+schema_version: "1.1"
+name: prototype-esp32c3-sensor-board
+expected_outcome: |
+  A new KiCad project in ./c3-sensor with a schematic (ESP32-C3 module, USB-C with CC
+  resistors and ESD, 3V3 regulator, BME280 with I2C pull-ups, LED, BOOT/EN buttons),
+  a 2-layer board with JLCPCB rules, placed and routed with a GND pour, ERC and DRC run
+  for real with 0 errors and 0 unconnected, and a fab package (gerbers, drill, BOM, CPL).
+  The tier (prototype) and fab assumptions are stated, and residual risks are listed.
