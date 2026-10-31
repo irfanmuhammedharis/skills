@@ -1,0 +1,143 @@
+(version 1)
+
+# ---------------------------------------------------------------------------
+# Design rule cookbook. Copy the rules you need into <project>.kicad_dru,
+# after the fab profile rules, and delete the rest.
+#
+# Reminder on evaluation: rules are checked in order and the LAST matching rule
+# wins for a given constraint type, so put general rules first and specific ones
+# last. A syntax error anywhere disables every custom rule silently - use the
+# "Check Rule Syntax" button after every edit.
+#
+# Prefer A.hasNetclass('X') over A.NetClass == 'X': a net can belong to several
+# netclasses in KiCad 9 and later.
+# ---------------------------------------------------------------------------
+
+# --- power and current ----------------------------------------------------
+
+(rule "power: minimum copper width"
+  # width comes from pcb_calc.py trace-width; state the assumption in the record
+  (constraint track_width (min 0.6mm))
+  (constraint connection_width (min 0.5mm))
+  (condition "A.hasNetclass('Power')"))
+
+(rule "power: high current bus"
+  (constraint track_width (min 1.5mm))
+  (constraint connection_width (min 1.2mm))
+  (condition "A.hasNetclass('HighCurrent')"))
+
+(rule "power: solid zone connection on high current pads"
+  (constraint zone_connection solid)
+  (condition "A.hasNetclass('HighCurrent') || A.Fabrication_Property == 'Heatsink pad'"))
+
+(rule "thermals: consistent relief geometry"
+  (constraint thermal_relief_gap (min 0.25mm))
+  (constraint thermal_spoke_width (min 0.4mm)))
+
+(rule "thermals: require all four spokes to resolve"
+  (constraint min_resolved_spokes 4)
+  (severity warning))
+
+# --- high voltage and safety ---------------------------------------------
+
+(rule "mains: creepage across the isolation barrier"
+  # IEC 60664-1, pollution degree 2, material group IIIa, 250 V working,
+  # reinforced insulation. Replace with the value your product standard requires.
+  (constraint creepage (min 5.0mm))
+  (condition "A.hasNetclass('MAINS') && !B.hasNetclass('MAINS')"))
+
+(rule "mains: air clearance across the barrier"
+  (constraint clearance (min 3.0mm))
+  (condition "A.hasNetclass('MAINS') && !B.hasNetclass('MAINS')"))
+
+(rule "mains: spacing between live and neutral"
+  (constraint clearance (min 1.5mm))
+  (condition "A.hasNetclass('MAINS') && B.hasNetclass('MAINS')"))
+
+(rule "mains: nothing else in the primary area"
+  # draw a rule area named PRIMARY around the mains section
+  (constraint disallow footprint text graphic)
+  (condition "A.intersectsArea('PRIMARY') && !A.hasNetclass('MAINS')")
+  (severity warning))
+
+# --- high speed -----------------------------------------------------------
+
+(rule "usb2: coupled pair geometry"
+  (constraint track_width (min 0.28mm) (opt 0.30mm) (max 0.34mm))
+  (constraint diff_pair_gap (min 0.18mm) (opt 0.2mm) (max 0.25mm))
+  (constraint diff_pair_uncoupled (max 5mm))
+  (condition "A.inDiffPair('/USB_D')"))
+
+(rule "usb2: intra-pair skew"
+  (constraint skew (max 0.15mm))
+  (condition "A.inDiffPair('/USB_D')"))
+
+(rule "diff pairs: keep other nets away"
+  (constraint clearance (min 0.6mm))
+  (condition "A.inDiffPair('*') && !AB.isCoupledDiffPair()"))
+
+(rule "bus: matched length group"
+  (constraint length (min 40mm) (max 45mm))
+  (condition "A.hasNetclass('SDIO')"))
+
+# KiCad 10 time-domain form: requires a tuning profile on the netclass.
+# (rule "ddr byte lane 0 skew"
+#   (constraint skew (max 5ps))
+#   (condition "A.hasNetclass('DDR_DQ0')"))
+
+(rule "clocks: extra clearance"
+  (constraint clearance (min 0.4mm))
+  (condition "A.hasNetclass('CLK') && !B.hasNetclass('CLK')"))
+
+# --- RF -------------------------------------------------------------------
+
+(rule "rf: 50 ohm feed line width"
+  # from pcb_calc.py microstrip --z0 50 for the chosen stackup
+  (constraint track_width (min 0.35mm) (opt 0.37mm) (max 0.39mm))
+  (condition "A.hasNetclass('RF50')"))
+
+(rule "rf: clearance around the feed line"
+  (constraint clearance (min 1.0mm))
+  (condition "A.hasNetclass('RF50') && !B.hasNetclass('RF50')"))
+
+(rule "rf: antenna keepout on every layer"
+  # draw a rule area named ANT_KEEPOUT covering the antenna clearance zone
+  (constraint disallow track via zone pad footprint)
+  (condition "A.intersectsArea('ANT_KEEPOUT')"))
+
+# --- component and area specific -----------------------------------------
+
+(rule "bga: neck down inside the courtyard only"
+  (constraint track_width (min 0.1mm) (opt 0.13mm))
+  (constraint clearance (min 0.1mm))
+  (condition "A.intersectsCourtyard('U1')"))
+
+(rule "crystal: keep copper away from the oscillator"
+  (constraint physical_clearance (min 0.5mm))
+  (condition "A.intersectsCourtyard('Y1') && !A.memberOfFootprint('Y1')")
+  (severity warning))
+
+(rule "sheet scoped: analog section clearance"
+  (constraint clearance (min 0.3mm))
+  (condition "A.memberOfSheet('/analog/')"))
+
+(rule "connectors: mechanical clearance to the board edge"
+  (layer "F.Courtyard")
+  (constraint physical_clearance (min 1mm))
+  (condition "B.Layer == 'Edge.Cuts'")
+  (severity warning))
+
+(rule "no copper pour under the switching node"
+  # name the switch-node zone SW_KEEPOUT if you need this geometrically
+  (constraint physical_clearance (min 0.3mm))
+  (condition "A.Type == 'Zone' && B.hasNetclass('SWITCHNODE')")
+  (severity warning))
+
+# --- documented exceptions ------------------------------------------------
+
+# Example of a deliberate, reasoned exception. Every 'ignore' carries a comment.
+# (rule "allow blind-to-microvia hole spacing"
+#   # the fab mechanically drills blind vias before laser drilling microvias
+#   (condition "A.Via_Type == 'Blind/buried' && B.Via_Type == 'Micro'")
+#   (constraint hole_to_hole)
+#   (severity ignore))

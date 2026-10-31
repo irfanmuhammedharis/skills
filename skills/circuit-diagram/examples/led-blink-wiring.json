@@ -1,0 +1,8 @@
+{
+  "wires": [
+    {"from": "D13", "to": "e1", "color": "#fb8c00", "note": "signal into resistor"},
+    {"from": "f3", "to": "-rail", "color": "#37474f", "note": "LED cathode"},
+    {"from": "-rail", "to": "GND", "color": "#37474f", "note": "ground return"}
+  ],
+  "labels": ["R1 220\u03a9", "LED1"]
+}

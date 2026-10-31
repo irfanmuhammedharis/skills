@@ -1,0 +1,75 @@
+(version 1)
+
+# ---------------------------------------------------------------------------
+# JLCPCB standard process, 1-4 layers, 1 oz outer copper.
+#
+# These rules encode the fab's floor so a violation is caught in DRC instead of
+# in a DFM email. They do NOT replace Board Setup -> Constraints: set the same
+# numbers there as absolute board minima, because a custom rule can only make a
+# constraint tighter, never looser.
+#
+# Board Setup -> Constraints (set these first):
+#   min clearance 0.127   min track 0.127   min annular 0.13
+#   min via hole 0.30     min via diameter 0.45
+#   min through-hole 0.20 hole-to-hole 0.50
+#   copper to edge 0.20   min connection width 0.20
+#
+# Verify against the current capability page before every order; process options
+# change, and 2 oz copper raises the minimum track/space to about 0.2 mm.
+# ---------------------------------------------------------------------------
+
+(rule "fab floor: track width"
+  (constraint track_width (min 0.127mm) (opt 0.2mm))
+  (severity error))
+
+(rule "fab floor: copper clearance"
+  (constraint clearance (min 0.127mm))
+  (severity error))
+
+(rule "fab floor: annular ring"
+  (constraint annular_width (min 0.13mm))
+  (severity error))
+
+(rule "fab floor: via drill"
+  (constraint hole_size (min 0.3mm) (max 6.3mm))
+  (condition "A.Type == 'Via'"))
+
+(rule "fab floor: plated through-hole size"
+  (constraint hole_size (min 0.2mm) (max 6.35mm))
+  (condition "A.isPlated() && A.Hole_Size_X == A.Hole_Size_Y"))
+
+(rule "fab floor: plated slot width"
+  (constraint hole_size (min 0.5mm))
+  (condition "A.isPlated() && A.Hole_Size_X != A.Hole_Size_Y"))
+
+(rule "fab floor: hole to hole"
+  (constraint hole_to_hole (min 0.5mm))
+  (severity error))
+
+(rule "fab floor: copper to board edge"
+  (constraint edge_clearance (min 0.2mm))
+  (severity error))
+
+(rule "fab floor: pour neck width"
+  (constraint connection_width (min 0.2mm)))
+
+(rule "fab floor: silkscreen legibility"
+  (constraint text_thickness (min 0.15mm))
+  (constraint text_height (min 1.0mm))
+  (severity warning))
+
+(rule "fab floor: keep silkscreen off pads"
+  (constraint silk_clearance (min 0.15mm))
+  (severity warning))
+
+# The standard process does not offer microvias or blind/buried vias.
+# Delete this rule if you have ordered an advanced process.
+(rule "process: no microvias or buried vias"
+  (constraint disallow micro_via buried_via)
+  (severity error))
+
+# Catch pad-level overrides that silently break the fabrication data.
+(rule "hygiene: no solder mask margin overrides"
+  (constraint assertion "A.Soldermask_Margin_Override == 0mm")
+  (condition "A.Type == 'Pad'")
+  (severity warning))
